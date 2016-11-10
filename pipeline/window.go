@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"errors"
 	"time"
 )
 
@@ -39,6 +40,11 @@ type WindowNode struct {
 	// Whether to wait till the period is full before the first emit.
 	// tick:ignore
 	FillPeriodFlag bool `tick:"FillPeriod"`
+
+	// PeriodCount is the number of points per window.
+	PeriodCount int64
+	// EveryCount determines how often the window is emitted based on the count of points.
+	EveryCount int64
 }
 
 func newWindowNode() *WindowNode {
@@ -65,4 +71,14 @@ func (w *WindowNode) Align() *WindowNode {
 func (w *WindowNode) FillPeriod() *WindowNode {
 	w.FillPeriodFlag = true
 	return w
+}
+
+func (w *WindowNode) validate() error {
+	if w.PeriodCount != 0 && w.Period != 0 {
+		return errors.New("cannot specify both period and periodCount")
+	}
+	if w.PeriodCount != 0 && w.AlignFlag {
+		return errors.New("can only align windows based off time, not count")
+	}
+	return nil
 }
